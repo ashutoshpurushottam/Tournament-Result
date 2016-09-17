@@ -11,36 +11,28 @@ CREATE DATABASE tournament;
 
 -- Players table
 CREATE TABLE players(
-	player_id SERIAL PRIMARY KEY,
-	player_name TEXT NOT NULL
+	id SERIAL PRIMARY KEY,
+	name TEXT NOT NULL
 );
 
 -- Matches table
 CREATE TABLE matches(
-	match_id SERIAL PRIMARY KEY,
-	match_loser INT REFERENCES players(player_id),
-	match_winner INT REFERENCES players(player_id)
+	id SERIAL PRIMARY KEY,
+	match_loser INT REFERENCES players(id),
+	match_winner INT REFERENCES players(id)
 );
 
 -- Views --
 
--- Player count
-CREATE OR REPLACE View players_count AS
-SELECT COUNT(*) FROM players;
-
--- Random seeding of matches before the tournament starts
-CREATE OR REPLACE View initial_seed AS
-SELECT * FROM players ORDER BY random();
-
 -- Player standing 
 CREATE OR REPLACE View player_standings AS
-SELECT  player_id, player_name, SUM(CASE WHEN players.player_id = matches.match_winner THEN 1 ELSE 0 END) AS win_count,
-COUNT(matches) AS match_count
-FROM players
-LEFT OUTER JOIN matches
-ON players.player_id = matches.match_winner OR players.player_id = matches.match_loser
-GROUP BY player_id
-ORDER BY win_count DESC, match_count ASC;
+	SELECT  players.id as id, name, SUM(CASE WHEN players.id = matches.match_winner THEN 1 ELSE 0 END) AS win_count,
+	COUNT(matches) AS match_count
+	FROM players
+	LEFT OUTER JOIN matches
+	ON players.id = matches.match_winner OR players.id = matches.match_loser
+	GROUP BY id
+	ORDER BY win_count DESC, match_count ASC;
 
 
 

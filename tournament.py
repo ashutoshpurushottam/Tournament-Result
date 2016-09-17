@@ -13,31 +13,31 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    DB = connect()
-    c = DB.cursor()
+    db = connect()
+    c = db.cursor()
     # delete all rows
     c.execute("DELETE FROM matches")
-    DB.commit()
-    DB.close()
+    db.commit()
+    db.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    DB = connect()
-    c = DB.cursor()
+    db = connect()
+    c = db.cursor()
     c.execute("DELETE FROM players")
-    DB.commit()
-    DB.close()
+    db.commit()
+    db.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    DB = connect()
-    c = DB.cursor()
-    c.execute("SELECT * FROM players_count")
-    total = c.fetchall[0][0]
-    DB.commit()
-    DB.close()
+    db = connect()
+    c = db.cursor()
+    c.execute("SELECT COUNT(id) FROM players")
+    total = c.fetchall()[0][0]
+    db.commit()
+    db.close()
     return total
     
 
@@ -52,11 +52,11 @@ def registerPlayer(name):
       name: the player's full name (need not be unique).
     """
     name_bleached = bleach.clean(name, strip=True)
-    DB = connect()
-    c = DB.cursor()
-    c.execute("INSERT INTO players (player_name) VALUES (%s)", (name_bleached, ))
-    DB.commit()
-    DB.close()
+    db = connect()
+    c = db.cursor()
+    c.execute("INSERT INTO players (name) VALUES (%s)", (name_bleached, ))
+    db.commit()
+    db.close()
 
 
 def playerStandings():
@@ -72,12 +72,12 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    DB = connect()
-    c = DB.cursor()
+    db = connect()
+    c = db.cursor()
     c.execute("SELECT * FROM player_standings")
     player_standings = c.fetchall()
-    DB.commit() 
-    DB.close()
+    db.commit() 
+    db.close()
     return player_standings
     
 
@@ -89,11 +89,11 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    DB = connect()
-    c = DB.cursor()
-    c.execute("INSERT INTO matches (match_loser, match_winner) VALUE(%s, %s);", (loser, winner))
-    DB.commit()
-    DB.close()
+    db = connect()
+    c = db.cursor()
+    c.execute("INSERT INTO matches (match_loser, match_winner) VALUES (%s, %s);", (loser, winner))
+    db.commit()
+    db.close()
  
  
 def swissPairings():
@@ -111,30 +111,21 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    DB = connect()
-    c = DB.cursor()
-    # count number of matches
-    match_count = c.execute("SELECT COUNT(*) FROM matches")
+    db = connect()
+    c = db.cursor()
     # get player standings
-    c.execute("SELECT player_id, player_name FROM player_standings")
+    c.execute("SELECT id, name FROM player_standings")
     standings = c.fetchall()
-    DB.commit()
-    # get initial seed 
-    c.execute("SELECT player_id, player_name FROM initial_seed")
-    initial_seed = c.fetchall()
-    DB.commit()
-    # get number of players
-    num_players = count_players()
-    
+    db.commit()
+    db.close()
     pairings = []
-    if match_count == 0:
-        for i in range(0, num_players-1, 2):
-            pairings.append(seed[i] + seed[i+1])
-    else:
-        for i in range(1, num_players-1, 2):
-            pairings.append(standings[i] + standings[i+1])
-    DB.close()
+    idx = 0
+    while idx < len(standings):
+        pairings.append(standings[idx] + standings[idx+1])
+        idx += 2
+    
     return pairings
+
 
 
 
