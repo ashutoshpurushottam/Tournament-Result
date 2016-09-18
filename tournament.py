@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-# 
 # tournament.py -- implementation of a Swiss-system tournament
-#
 
 import psycopg2
 from contextlib import contextmanager
-
 
 
 def connect():
@@ -14,6 +11,7 @@ def connect():
         return psycopg2.connect("dbname=tournament")
     except:
         print("Connection to the database failed")
+
 
 @contextmanager
 def get_cursor():
@@ -27,7 +25,7 @@ def get_cursor():
         yield cursor
     except Exception, e:
         DB.rollback()
-        print("rolling back transaction " + e)
+        print("rolling back transaction " + str(e))
         raise
     else:
         DB.commit()
@@ -52,17 +50,14 @@ def countPlayers():
     """Returns the number of players currently registered."""
     with get_cursor() as cursor:
         cursor.execute("SELECT COUNT(id) FROM players")
-        total = cursor.fetchall()[0][0]
+        total = cursor.fetchone()[0]
         return total
-    
 
 
 def registerPlayer(name):
     """Adds a player to the tournament database.
-  
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
-  
     Args:
       name: the player's full name (need not be unique).
     """
@@ -72,9 +67,8 @@ def registerPlayer(name):
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
-
-    The first entry in the list should be the player in first place, or a player
-    tied for first place if there is currently a tie.
+    The first entry in the list should be the player in first place, or a
+    player tied for first place if there is currently a tie.
 
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
@@ -87,20 +81,18 @@ def playerStandings():
         cursor.execute("SELECT * FROM player_standings")
         player_standings = cursor.fetchall()
         return player_standings
-    
 
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
-
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
     with get_cursor() as cursor:
-        cursor.execute("INSERT INTO matches (match_loser, match_winner) VALUES (%s, %s);", (loser, winner))
-    
- 
+        cursor.execute("INSERT INTO matches(match_loser, match_winner) VALUES(%s, %s);", (loser, winner))
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
