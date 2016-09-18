@@ -4,41 +4,56 @@
 #
 
 import psycopg2
-import bleach
+from contextlib import contextmanager
+
+
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    try:
+        return psycopg2.connect("dbname=tournament")
+    except:
+        print("Connection to the database failed")
+
+@contextmanager
+def get_cursor():
+    """
+    Creates a cursor from a database
+    connection object, and performs queries using that cursor.
+    """
+    DB = connect()
+    cursor = DB.cursor()
+    try:
+        yield cursor
+    except Exception, e:
+        DB.rollback()
+        print("rolling back transaction " + e)
+        raise
+    else:
+        DB.commit()
+    finally:
+        cursor.close()
+        DB.close()
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    db = connect()
-    c = db.cursor()
-    # delete all rows
-    c.execute("DELETE FROM matches")
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM matches")
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute("DELETE FROM players")
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM players")
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT COUNT(id) FROM players")
-    total = c.fetchall()[0][0]
-    db.commit()
-    db.close()
-    return total
+    with get_cursor() as cursor:
+        cursor.execute("SELECT COUNT(id) FROM players")
+        total = cursor.fetchall()[0][0]
+        return total
     
 
 
@@ -51,12 +66,8 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    name_bleached = bleach.clean(name, strip=True)
-    db = connect()
-    c = db.cursor()
-    c.execute("INSERT INTO players (name) VALUES (%s)", (name_bleached, ))
-    db.commit()
-    db.close()
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO players (name) VALUES (%s)", (name, ))
 
 
 def playerStandings():
@@ -72,13 +83,10 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("SELECT * FROM player_standings")
-    player_standings = c.fetchall()
-    db.commit() 
-    db.close()
-    return player_standings
+    with get_cursor() as cursor:
+        cursor.execute("SELECT * FROM player_standings")
+        player_standings = cursor.fetchall()
+        return player_standings
     
 
 
@@ -89,12 +97,9 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    db = connect()
-    c = db.cursor()
-    c.execute("INSERT INTO matches (match_loser, match_winner) VALUES (%s, %s);", (loser, winner))
-    db.commit()
-    db.close()
- 
+    with get_cursor() as cursor:
+        cursor.execute("INSERT INTO matches (match_loser, match_winner) VALUES (%s, %s);", (loser, winner))
+    
  
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -111,20 +116,13 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    db = connect()
-    c = db.cursor()
-    # get player standings
-    c.execute("SELECT id, name FROM player_standings")
-    standings = c.fetchall()
-    db.commit()
-    db.close()
-    pairings = []
-    idx = 0
-    while idx < len(standings):
-        pairings.append(standings[idx] + standings[idx+1])
-        idx += 2
-    
-    return pairings
+    with get_cursor() as cursor:
+        cursor.execute("SELECT player_id, name FROM player_standings")
+        standings = cursor.fetchall()
+        pairings = []
+        for idx in range(0, len(standings), 2):
+            pairings.append(standings[idx] + standings[idx+1])
+        return pairings
 
 
 

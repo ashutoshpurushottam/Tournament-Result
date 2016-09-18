@@ -26,12 +26,12 @@ CREATE TABLE matches(
 
 -- Player standing 
 CREATE OR REPLACE View player_standings AS
-	SELECT  players.id as id, name, SUM(CASE WHEN players.id = matches.match_winner THEN 1 ELSE 0 END) AS win_count,
+	SELECT  players.id AS player_id, name, SUM(CASE WHEN players.id = matches.match_winner THEN 1 ELSE 0 END) AS win_count,
 	COUNT(matches) AS match_count
 	FROM players
 	LEFT OUTER JOIN matches
 	ON players.id = matches.match_winner OR players.id = matches.match_loser
-	GROUP BY id
+	GROUP BY player_id
 	ORDER BY win_count DESC, match_count ASC;
 
 
