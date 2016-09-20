@@ -23,7 +23,7 @@ def get_cursor():
     cursor = DB.cursor()
     try:
         yield cursor
-    except Exception, e:
+    except Exception as e:
         DB.rollback()
         print("rolling back transaction " + str(e))
         raise
@@ -90,17 +90,20 @@ def reportMatch(winner, loser):
       loser:  the id number of the player who lost
     """
     with get_cursor() as cursor:
-        cursor.execute("INSERT INTO matches(match_loser, match_winner) VALUES(%s, %s);", (loser, winner))
+        cursor.execute(
+            "INSERT INTO matches(match_loser, match_winner) VALUES(%s, %s);",
+            (loser, winner)
+        )
 
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
-  
+
     Assuming that there are an even number of players registered, each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
-  
+
     Returns:
       A list of tuples, each of which contains (id1, name1, id2, name2)
         id1: the first player's unique id
@@ -113,16 +116,5 @@ def swissPairings():
         standings = cursor.fetchall()
         pairings = []
         for idx in range(0, len(standings), 2):
-            pairings.append(standings[idx] + standings[idx+1])
+            pairings.append(standings[idx] + standings[idx + 1])
         return pairings
-
-
-
-
-
-
-    
-
-    
-
-
